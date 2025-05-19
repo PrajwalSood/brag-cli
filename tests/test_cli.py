@@ -2,6 +2,7 @@ import os
 import pytest
 from typer.testing import CliRunner
 from brag.cli import app
+from datetime import datetime, timedelta
 
 runner = CliRunner()
 
@@ -67,4 +68,48 @@ def test_bullets(monkeypatch):
         monkeypatch.setattr("brag.cli.generate_resume_bullets", lambda: "Bullet 1\nBullet 2")
         result = runner.invoke(app, ["bullets"])
         assert "Bullet 1" in result.output
-        assert "Bullet 2" in result.output 
+        assert "Bullet 2" in result.output
+
+def test_purge_by_date():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        import brag.doc_utils as doc_utils
+        # Write three entries with different dates
+        dates = [
+            (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"),
+            (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ]
+        messages = ["Entry 1", "Entry 2", "Entry 3"]
+        with open("bragdoc.md", "a") as f:
+            for ts, msg in zip(dates, messages):
+                entry = doc_utils.BragEntry(timestamp=ts, message=msg)
+                f.write(f"- [{entry.timestamp}] {entry.message}\n")
+        # Purge only the second entry (yesterday)
+        purge_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        result = runner.invoke(app, ["purge", "--start", purge_date, "--end", purge_date])
+        assert "Purged 1 entries" in result.output
+        with open("bragdoc.md") as f:
+            content = f.read()
+        assert "Entry 2" not in content
+        assert "Entry 1" in content
+        assert "Entry 3" in content
+
+def test_purge_by_relative(monkeypatch):
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        # Add an entry 2 days ago
+        import brag.doc_utils as doc_utils
+        old_date = (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S")
+        entry = doc_utils.BragEntry(timestamp=old_date, message="Old Entry")
+        with open("bragdoc.md", "a") as f:
+            f.write(f"- [{entry.timestamp}] {entry.message}\n")
+        # Add a recent entry
+        runner.invoke(app, ["add", "Recent Entry"])
+        # Purge last 1d (should only remove the recent entry)
+        result = runner.invoke(app, ["purge", "--start", "1d"])
+        assert "Purged 1 entries" in result.output
+        with open("bragdoc.md") as f:
+            content = f.read()
+        assert "Recent Entry" not in content
+        assert "Old Entry" in content 
