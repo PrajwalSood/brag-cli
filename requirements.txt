@@ -3,3 +3,4 @@ GitPython
 requests
 pytest
 pydantic
+streamlit

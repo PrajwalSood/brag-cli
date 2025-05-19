@@ -1,4 +1,0 @@
-typer
-GitPython
-requests
-pydantic

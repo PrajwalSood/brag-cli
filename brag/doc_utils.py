@@ -1,31 +1,47 @@
 import os
+import platform
 from datetime import datetime
 from typing import List
 from pydantic import BaseModel
 
-BRAG_DOC = "bragdoc.md"
+# Determine brag doc path based on OS
+
+def get_brag_doc_path() -> str:
+    home = os.path.expanduser("~")
+    if platform.system() == "Windows":
+        base = os.environ.get("APPDATA", home)
+        return os.path.join(base, "bragdoc.md")
+    elif platform.system() == "Darwin":
+        return os.path.join(home, "Library", "Application Support", "bragdoc.md")
+    else:  # Linux and others
+        xdg = os.environ.get("XDG_DATA_HOME", os.path.join(home, ".local", "share"))
+        return os.path.join(xdg, "bragdoc.md")
 
 class BragEntry(BaseModel):
     timestamp: str
     message: str
 
 def init_brag_doc() -> bool:
-    if not os.path.exists(BRAG_DOC):
-        with open(BRAG_DOC, "w") as f:
+    brag_doc = get_brag_doc_path()
+    if not os.path.exists(brag_doc):
+        os.makedirs(os.path.dirname(brag_doc), exist_ok=True)
+        with open(brag_doc, "w") as f:
             f.write("# Brag Doc\n\n")
         return True
     return False
 
 def add_entry(message: str) -> None:
+    brag_doc = get_brag_doc_path()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = BragEntry(timestamp=now, message=message)
-    with open(BRAG_DOC, "a") as f:
+    with open(brag_doc, "a") as f:
         f.write(f"- [{entry.timestamp}] {entry.message}\n")
 
 def read_history() -> List[str]:
-    if not os.path.exists(BRAG_DOC):
+    brag_doc = get_brag_doc_path()
+    if not os.path.exists(brag_doc):
         return []
-    with open(BRAG_DOC, "r") as f:
+    with open(brag_doc, "r") as f:
         return f.readlines()
 
 def purge_entries_between(start_date: str, end_date: str) -> int:
@@ -34,9 +50,10 @@ def purge_entries_between(start_date: str, end_date: str) -> int:
     Dates should be in 'YYYY-MM-DD' format.
     Returns the number of entries removed.
     """
-    if not os.path.exists(BRAG_DOC):
+    brag_doc = get_brag_doc_path()
+    if not os.path.exists(brag_doc):
         return 0
-    with open(BRAG_DOC, "r") as f:
+    with open(brag_doc, "r") as f:
         lines = f.readlines()
     header = []
     entries = []
@@ -59,6 +76,28 @@ def purge_entries_between(start_date: str, end_date: str) -> int:
         except Exception:
             pass
         kept.append(entry)
-    with open(BRAG_DOC, "w") as f:
+    with open(brag_doc, "w") as f:
         f.writelines(header + kept)
     return removed
+
+def init_brag_repo() -> str:
+    """
+    Initialize a git repo in the bragdoc's directory (if not already a repo) and create the bragdoc there.
+    Returns the path to the bragdoc.
+    """
+    brag_doc = get_brag_doc_path()
+    brag_dir = os.path.dirname(brag_doc)
+    os.makedirs(brag_dir, exist_ok=True)
+    # Initialize git repo if not present
+    if not os.path.exists(os.path.join(brag_dir, ".git")):
+        import git
+        repo = git.Repo.init(brag_dir)
+    else:
+        repo = git.Repo(brag_dir)
+    # Create bragdoc if not present
+    if not os.path.exists(brag_doc):
+        with open(brag_doc, "w") as f:
+            f.write("# Brag Doc\n\n")
+        repo.git.add(brag_doc)
+        repo.index.commit("Initialize brag doc")
+    return brag_doc
