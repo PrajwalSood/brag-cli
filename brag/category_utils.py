@@ -21,7 +21,7 @@ def extract_categories_from_history(history_lines: List[str]) -> List[str]:
                         category = rest[1:cat_end].strip()
                         if category:
                             categories.add(category)
-    return list(categories)
+    return sorted(categories)
 
 def parse_brag_line(line: str) -> Tuple[Optional[str], str]:
     """
