@@ -20,3 +20,10 @@ A command-line utility to help you create and manage a brag document, sync with 
    ```bash
    python3 -m brag.cli [COMMAND]
    ```
+
+## Running Tests
+
+Tests are located in the `tests/` directory. To run all tests:
+```bash
+pytest
+```
