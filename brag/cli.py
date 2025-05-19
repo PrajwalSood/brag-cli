@@ -4,8 +4,15 @@ from brag.git_utils import sync_with_git, get_git_history
 from brag.ollama_utils import summarize_brag_doc, generate_resume_bullets
 from datetime import datetime, timedelta
 import re
+from brag.category_utils import (
+    extract_categories_from_history, find_closest_category,
+    set_current_category, get_current_category, unset_current_category, change_current_category,
+    list_categories, select_category_by_index
+)
 
 app = typer.Typer(help="Brag CLI: Create and manage your brag document.")
+category_app = typer.Typer(help="Manage current brag category.")
+app.add_typer(category_app, name="category")
 
 def parse_relative_time(relative: str) -> str:
     """
@@ -47,11 +54,73 @@ def sync():
     except Exception as e:
         typer.echo(f"Git sync failed: {e}")
 
+@category_app.command("set")
+def set_category(category: str):
+    """Set the current category for new brags."""
+    set_current_category(category)
+    typer.echo(f"Current category set to: {category}")
+
+@category_app.command("unset")
+def unset_category():
+    """Unset the current category."""
+    unset_current_category()
+    typer.echo("Current category unset.")
+
+@category_app.command("change")
+def change_category(new_category: str):
+    """Change the current category."""
+    change_current_category(new_category)
+    typer.echo(f"Current category changed to: {new_category}")
+
+@category_app.command("show")
+def show_category():
+    """Show the current category."""
+    category = get_current_category()
+    if category:
+        typer.echo(f"Current category: {category}")
+    else:
+        typer.echo("No current category set.")
+
+@category_app.command("list")
+def list_all_categories():
+    """List all unique categories from brag history with their indices."""
+    history = read_history()
+    categories = list_categories(history)
+    if not categories:
+        typer.echo("No categories found.")
+        return
+    for idx, cat in enumerate(categories):
+        typer.echo(f"{idx}: {cat}")
+
+@category_app.command("select")
+def select_category(index: int):
+    """Select a category by its index from the list and set it as current."""
+    history = read_history()
+    try:
+        category = select_category_by_index(history, index)
+        set_current_category(category)
+        typer.echo(f"Current category set to: {category}")
+    except (ValueError, IndexError) as e:
+        typer.echo(str(e))
+
 @app.command()
-def add(message: str = typer.Argument(..., help="Message or achievement to add.")):
-    """Add a new entry to the brag doc."""
-    add_entry(message)
-    typer.echo(f"Added entry: {message}")
+def add(
+    message: str = typer.Argument(..., help="Message or achievement to add.")
+):
+    """Add a new entry to the brag doc. Uses the current category if set, else auto-categorises."""
+    assigned_category = get_current_category()
+    if not assigned_category:
+        history = read_history()
+        assigned_category = find_closest_category(message, history)
+        if assigned_category:
+            typer.echo(f"No category set. Assigned to existing category by similarity: '{assigned_category}'")
+        else:
+            typer.echo("No category set. No category found by similarity.")
+    add_entry(message, assigned_category)
+    if assigned_category:
+        typer.echo(f"Added entry: [{assigned_category}] {message}")
+    else:
+        typer.echo(f"Added entry: {message}")
 
 @app.command()
 def history():

@@ -1,7 +1,7 @@
 import os
 import platform
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 # Determine brag doc path based on OS
@@ -20,6 +20,7 @@ def get_brag_doc_path() -> str:
 class BragEntry(BaseModel):
     timestamp: str
     message: str
+    category: Optional[str] = None
 
 def init_brag_doc() -> bool:
     brag_doc = get_brag_doc_path()
@@ -30,12 +31,15 @@ def init_brag_doc() -> bool:
         return True
     return False
 
-def add_entry(message: str) -> None:
+def add_entry(message: str, category: str = None) -> None:
     brag_doc = get_brag_doc_path()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = BragEntry(timestamp=now, message=message)
+    entry = BragEntry(timestamp=now, message=message, category=category)
     with open(brag_doc, "a") as f:
-        f.write(f"- [{entry.timestamp}] {entry.message}\n")
+        if category:
+            f.write(f"- [{entry.timestamp}] [{category}] {entry.message}\n")
+        else:
+            f.write(f"- [{entry.timestamp}] {entry.message}\n")
 
 def read_history() -> List[str]:
     brag_doc = get_brag_doc_path()

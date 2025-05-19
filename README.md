@@ -59,6 +59,46 @@ brag add "Wrote and passed all automated tests."
 brag add "Packaged and prepared project for PyPI publication."
 ```
 
+### 2.1. Categorise Your Brags (Updated!)
+You can now set a category context for your brags:
+```bash
+brag category set "Machine Learning"
+brag add "Built a new ML model"
+```
+This will add the brag under the 'Machine Learning' category. To unset the category:
+```bash
+brag category unset
+```
+If you do not set a category, brag-cli will try to auto-categorise your brag based on previous topics using string similarity. If a close match is found, it will assign your brag to that category and inform you:
+```bash
+brag add "Created a website"
+# Output: No category set. Assigned to existing category by similarity: 'Web Development'
+#         Added entry: [Web Development] Created a website
+```
+If no similar category is found, the brag will be added without a category.
+
+### 2.2. Managing Categories
+You can manage your current category context with:
+- `brag category set <category>`: Set the current category for new brags
+- `brag category unset`: Unset the current category
+- `brag category change <new_category>`: Change the current category
+- `brag category show`: Show the current category
+- `brag category list`: List all unique categories from your brag history with their indices
+- `brag category select <index>`: Select a category by its index from the list and set it as current
+
+**Example:**
+```bash
+brag category list
+# Output:
+# 0: Machine Learning
+# 1: Web Development
+# 2: DevOps
+
+brag category select 1
+# Output:
+# Current category set to: Web Development
+```
+
 ### 3. View Your Brag Doc and History
 See your brag doc and git history:
 ```bash
