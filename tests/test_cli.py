@@ -112,4 +112,87 @@ def test_purge_by_relative(monkeypatch):
         with open("bragdoc.md") as f:
             content = f.read()
         assert "Recent Entry" not in content
-        assert "Old Entry" in content 
+        assert "Old Entry" in content
+
+def test_add_with_category_set():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["category", "set", "Machine Learning"])
+        result = runner.invoke(app, ["add", "Did something in ML"])
+        assert "Added entry: [Machine Learning] Did something in ML" in result.output
+        with open("bragdoc.md") as f:
+            content = f.read()
+        assert "[Machine Learning] Did something in ML" in content
+
+def test_add_auto_category():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["category", "set", "Web Development"])
+        runner.invoke(app, ["add", "Built a web app"])
+        runner.invoke(app, ["category", "unset"])
+        # Add a new entry with a similar topic, no category set
+        result = runner.invoke(app, ["add", "Created a website"])
+        assert "Assigned to existing category by similarity: 'Web Development'" in result.output
+        assert "Added entry: [Web Development] Created a website" in result.output
+        with open("bragdoc.md") as f:
+            content = f.read()
+        assert "[Web Development] Created a website" in content
+
+def test_add_no_category_match():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["category", "set", "Machine Learning"])
+        runner.invoke(app, ["add", "Did something in ML"])
+        runner.invoke(app, ["category", "unset"])
+        # Add a new entry with a very different topic, no category set
+        result = runner.invoke(app, ["add", "Wrote a poem"])
+        assert "Added entry: Wrote a poem" in result.output
+        with open("bragdoc.md") as f:
+            content = f.read()
+        assert "Wrote a poem" in content
+        assert "[Machine Learning]" not in content
+
+def test_category_set_unset_show_change():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        # Set
+        result = runner.invoke(app, ["category", "set", "DevOps"])
+        assert "Current category set to: DevOps" in result.output
+        # Show
+        result = runner.invoke(app, ["category", "show"])
+        assert "Current category: DevOps" in result.output
+        # Change
+        result = runner.invoke(app, ["category", "change", "Backend"])
+        assert "Current category changed to: Backend" in result.output
+        result = runner.invoke(app, ["category", "show"])
+        assert "Current category: Backend" in result.output
+        # Unset
+        result = runner.invoke(app, ["category", "unset"])
+        assert "Current category unset." in result.output
+        result = runner.invoke(app, ["category", "show"])
+        assert "No current category set." in result.output
+
+def test_category_list_and_select():
+    with runner.isolated_filesystem():
+        runner.invoke(app, ["init"])
+        runner.invoke(app, ["category", "set", "ML"])
+        runner.invoke(app, ["add", "Did ML work"])
+        runner.invoke(app, ["category", "change", "Web"])
+        runner.invoke(app, ["add", "Built a website"])
+        runner.invoke(app, ["category", "change", "DevOps"])
+        runner.invoke(app, ["add", "Deployed infra"])
+        runner.invoke(app, ["category", "unset"])
+        # List categories
+        result = runner.invoke(app, ["category", "list"])
+        assert "0: ML" in result.output
+        assert "1: Web" in result.output
+        assert "2: DevOps" in result.output
+        # Select category by index
+        result = runner.invoke(app, ["category", "select", "1"])
+        assert "Current category set to: Web" in result.output
+        # Show current category
+        result = runner.invoke(app, ["category", "show"])
+        assert "Current category: Web" in result.output
+        # Out of range
+        result = runner.invoke(app, ["category", "select", "10"])
+        assert "out of range" in result.output or "No categories found." in result.output 
