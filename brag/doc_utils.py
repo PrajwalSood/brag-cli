@@ -3,19 +3,42 @@ import platform
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
+from brag.constants import (
+    BRAG_DOC_FILENAME, TIMESTAMP_FORMAT, DATE_FORMAT, BRAG_DOC_HEADER,
+    WINDOWS_BASE_PATH, DARWIN_APP_SUPPORT_PATH, LINUX_DATA_PATH, XDG_DATA_HOME_ENV,
+    CATEGORY_FORMAT, GIT_INIT_COMMIT_MESSAGE, TEST_BRAG_DOC_PATH
+)
 
 # Determine brag doc path based on OS
 
-def get_brag_doc_path() -> str:
+def get_brag_doc_path(test_path: str = None) -> str:
+    """
+    Get the path to the brag document file.
+    
+    Args:
+        test_path: Optional path for testing purposes. If None, normal path resolution is used.
+        
+    Returns:
+        Path to the brag document file.
+    """
+    # Use explicit test path if provided
+    if test_path:
+        return test_path
+        
+    # Use environment variable test path if set
+    if TEST_BRAG_DOC_PATH:
+        return TEST_BRAG_DOC_PATH
+        
+    # Normal path resolution based on OS
     home = os.path.expanduser("~")
     if platform.system() == "Windows":
-        base = os.environ.get("APPDATA", home)
-        return os.path.join(base, "bragdoc.md")
+        base = os.environ.get(WINDOWS_BASE_PATH, home)
+        return os.path.join(base, BRAG_DOC_FILENAME)
     elif platform.system() == "Darwin":
-        return os.path.join(home, "Library", "Application Support", "bragdoc.md")
+        return os.path.join(home, DARWIN_APP_SUPPORT_PATH, BRAG_DOC_FILENAME)
     else:  # Linux and others
-        xdg = os.environ.get("XDG_DATA_HOME", os.path.join(home, ".local", "share"))
-        return os.path.join(xdg, "bragdoc.md")
+        xdg = os.environ.get(XDG_DATA_HOME_ENV, os.path.join(home, LINUX_DATA_PATH))
+        return os.path.join(xdg, BRAG_DOC_FILENAME)
 
 class BragEntry(BaseModel):
     timestamp: str
@@ -27,17 +50,17 @@ def init_brag_doc() -> bool:
     if not os.path.exists(brag_doc):
         os.makedirs(os.path.dirname(brag_doc), exist_ok=True)
         with open(brag_doc, "w") as f:
-            f.write("# Brag Doc\n\n")
+            f.write(BRAG_DOC_HEADER)
         return True
     return False
 
 def add_entry(message: str, category: str = None) -> None:
     brag_doc = get_brag_doc_path()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime(TIMESTAMP_FORMAT)
     entry = BragEntry(timestamp=now, message=message, category=category)
     with open(brag_doc, "a") as f:
         if category:
-            f.write(f"- [{entry.timestamp}] [{category}] {entry.message}\n")
+            f.write(f"- [{entry.timestamp}] {CATEGORY_FORMAT.format(category=category)} {entry.message}\n")
         else:
             f.write(f"- [{entry.timestamp}] {entry.message}\n")
 
@@ -66,14 +89,14 @@ def purge_entries_between(start_date: str, end_date: str) -> int:
             entries.append(line)
         else:
             header.append(line)
-    start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
-    end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+    start_dt = datetime.strptime(start_date, DATE_FORMAT).date()
+    end_dt = datetime.strptime(end_date, DATE_FORMAT).date()
     kept = []
     removed = 0
     for entry in entries:
         try:
             ts = entry.split(']')[0][3:]
-            entry_dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S").date()
+            entry_dt = datetime.strptime(ts, TIMESTAMP_FORMAT).date()
             if start_dt <= entry_dt <= end_dt:
                 removed += 1
                 continue
@@ -101,7 +124,7 @@ def init_brag_repo() -> str:
     # Create bragdoc if not present
     if not os.path.exists(brag_doc):
         with open(brag_doc, "w") as f:
-            f.write("# Brag Doc\n\n")
+            f.write(BRAG_DOC_HEADER)
         repo.git.add(brag_doc)
-        repo.index.commit("Initialize brag doc")
+        repo.index.commit(GIT_INIT_COMMIT_MESSAGE)
     return brag_doc
