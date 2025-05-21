@@ -5,7 +5,7 @@ BRAG_DOC_FILENAME = "bragdoc.md"
 CATEGORY_FILE_NAME = ".brag_category"
 
 # Testing paths
-TEST_BRAG_DOC_PATH = os.environ.get("TEST_BRAG_DOC_PATH", None)
+TEST_BRAG_DOC_PATH = "TEST_BRAG_DOC_PATH"
 
 # File system paths by OS
 WINDOWS_BASE_PATH = "APPDATA"
