@@ -2,6 +2,7 @@ import difflib
 from typing import List, Optional, Tuple
 from collections import Counter
 import os
+from brag.constants import CATEGORY_FILE_NAME, BRAG_ENTRY_PREFIX
 
 def extract_categories_from_history(history_lines: List[str]) -> List[str]:
     """
@@ -10,7 +11,7 @@ def extract_categories_from_history(history_lines: List[str]) -> List[str]:
     """
     categories = set()
     for line in history_lines:
-        if line.startswith("- ["):
+        if line.startswith(BRAG_ENTRY_PREFIX):
             # Try to extract category (assume category is in square brackets after timestamp)
             parts = line.split("] ", 1)
             if len(parts) == 2:
@@ -27,7 +28,7 @@ def parse_brag_line(line: str) -> Tuple[Optional[str], str]:
     """
     Parse a brag line and return (category, message).
     """
-    if not line.startswith("- ["):
+    if not line.startswith(BRAG_ENTRY_PREFIX):
         return (None, "")
     # Remove timestamp
     parts = line.split("] ", 1)
@@ -49,7 +50,7 @@ def find_closest_category(new_message: str, history_lines: List[str], cutoff: fl
     Returns the most common category if there is a majority, else None.
     """
     # Build a list of (category, message) from history
-    samples = [parse_brag_line(line) for line in history_lines if line.startswith("- [")]
+    samples = [parse_brag_line(line) for line in history_lines if line.startswith(BRAG_ENTRY_PREFIX)]
     messages = [msg for cat, msg in samples if msg]
     if not messages:
         return None
@@ -78,7 +79,7 @@ def get_category_file_path() -> str:
     """Return the path to the .brag_category file in the brag doc directory."""
     from brag.doc_utils import get_brag_doc_path
     brag_doc = get_brag_doc_path()
-    return os.path.join(os.path.dirname(brag_doc), ".brag_category")
+    return os.path.join(os.path.dirname(brag_doc), CATEGORY_FILE_NAME)
 
 def set_current_category(category: str) -> None:
     """Set the current category (persisted in .brag_category)."""
