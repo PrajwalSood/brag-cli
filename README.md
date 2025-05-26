@@ -99,6 +99,48 @@ brag category select 1
 # Current category set to: Web Development
 ```
 
+### 2.3. Managing Your Developer Profile
+
+You can now maintain a developer profile with your personal and professional details:
+
+- `brag profile init`: Initialize a new developer profile
+- `brag profile show`: Show your developer profile
+- `brag profile update --field <field> --value <value>`: Update a field in your profile
+- `brag profile add-item --field <field> --item <item>`: Add an item to a list field
+- `brag profile remove-item --field <field> --index <index>`: Remove an item from a list field
+
+Available profile fields:
+- Basic fields: name, title, summary
+- Contact fields: contact.email, contact.phone, contact.linkedin, contact.github
+- List fields: skills, experience, education
+
+**Example:**
+```bash
+# Initialize your profile
+brag profile init
+
+# Update your name and title
+brag profile update --field name --value "Jane Smith"
+brag profile update --field title --value "Senior Software Engineer"
+
+# Add skills
+brag profile add-item --field skills --item "Python"
+brag profile add-item --field skills --item "TypeScript"
+
+# Generate personalized content
+brag profile generate-resume
+brag profile generate-summary
+```
+
+When you add entries to your brag doc with your profile set up, you'll receive a personalized greeting:
+```bash
+brag add "Completed API integration"
+# Output:
+# Welcome, Jane Smith!
+# Your brag document is helping you track achievements as a Senior Software Engineer.
+# Added entry: Completed API integration
+```
+
 ### 3. View Your Brag Doc and History
 See your brag doc and git history:
 ```bash
@@ -149,6 +191,49 @@ Output (example):
 - Integrated AI for summarization and resume bullet generation
 - Published and documented the tool for public use
 ```
+
+### 6. Generate Profile-Based Content
+With your profile set up, you can generate enhanced content that combines your profile information with your brag document:
+
+```bash
+brag profile generate-resume
+```
+Output (example):
+```
+JANE SMITH
+Senior Software Engineer
+jane.smith@example.com | github.com/janesmith | linkedin.com/in/janesmith
+
+SUMMARY
+Accomplished Senior Software Engineer with expertise in Python, TypeScript, and cloud architecture. Proven track record of building scalable applications and leading technical initiatives.
+
+EXPERIENCE
+...
+```
+
+```bash
+brag profile generate-summary
+```
+Output (example):
+```
+Jane Smith is a dedicated Senior Software Engineer with over 8 years of experience building robust, scalable software solutions. Her recent achievements include successfully implementing API integrations, leading development teams, and optimizing performance for mission-critical applications.
+
+With expertise in Python, TypeScript, and cloud architectures, Jane consistently delivers high-quality software that meets business objectives while maintaining clean, maintainable code. Her ability to communicate complex technical concepts to stakeholders makes her an effective team leader and collaborator.
+```
+
+## Streamlit Web Application
+
+The project also includes a Streamlit web application for a graphical interface to manage your brag document and profile:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The web application provides:
+- Brag document initialization and management
+- Profile initialization and management
+- Content generation with Ollama
+- Git synchronization
 
 ---
 

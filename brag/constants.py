@@ -3,6 +3,7 @@ import os
 # File paths and names
 BRAG_DOC_FILENAME = "bragdoc.md"
 CATEGORY_FILE_NAME = ".brag_category"
+PROFILE_FILE_NAME = ".brag_profile.json"
 
 # Testing paths
 TEST_BRAG_DOC_PATH = "TEST_BRAG_DOC_PATH"
@@ -26,4 +27,10 @@ GIT_INIT_COMMIT_MESSAGE = "Initialize brag doc"
 
 # Ollama API
 OLLAMA_API_URL = os.environ.get("OLLAMA_API_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2") 
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
+
+# Profile related
+PROFILE_FIELDS = [
+    "name", "title", "summary", "skills", "experience", "education", 
+    "contact.email", "contact.phone", "contact.linkedin", "contact.github"
+] 
