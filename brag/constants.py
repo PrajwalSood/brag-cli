@@ -5,8 +5,9 @@ BRAG_DOC_FILENAME = "bragdoc.md"
 CATEGORY_FILE_NAME = ".brag_category"
 PROFILE_FILE_NAME = ".brag_profile.json"
 
-# Testing paths
-TEST_BRAG_DOC_PATH = "TEST_BRAG_DOC_PATH"
+# Testing configuration
+IS_TESTING = False
+TEST_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "test_data")
 
 # File system paths by OS
 WINDOWS_BASE_PATH = "APPDATA"

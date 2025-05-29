@@ -4,8 +4,7 @@ from typing import Dict, Optional, Any
 import platform
 from brag.constants import (
     PROFILE_FILE_NAME,
-    WINDOWS_BASE_PATH, DARWIN_APP_SUPPORT_PATH, LINUX_DATA_PATH, XDG_DATA_HOME_ENV,
-    TEST_BRAG_DOC_PATH
+    WINDOWS_BASE_PATH, DARWIN_APP_SUPPORT_PATH, LINUX_DATA_PATH, XDG_DATA_HOME_ENV
 )
 
 def get_profile_path(test_path: str = None) -> str:
@@ -22,9 +21,12 @@ def get_profile_path(test_path: str = None) -> str:
     if test_path:
         return os.path.join(os.path.dirname(test_path), PROFILE_FILE_NAME)
         
-    # Use environment variable test path if set
-    if TEST_BRAG_DOC_PATH:
-        return os.path.join(os.path.dirname(TEST_BRAG_DOC_PATH), PROFILE_FILE_NAME)
+    # Import constants dynamically to get current values
+    from brag import constants
+    
+    # Use test directory if in testing mode
+    if constants.IS_TESTING:
+        return os.path.join(constants.TEST_DIR, PROFILE_FILE_NAME)
         
     # Normal path resolution based on OS
     home = os.path.expanduser("~")

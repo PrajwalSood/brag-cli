@@ -2,34 +2,31 @@ import os
 import pytest
 import tempfile
 import shutil
-from brag.constants import TEST_BRAG_DOC_PATH
+from brag import constants
 
 @pytest.fixture(autouse=True)
-def set_test_brag_doc_path():
-    """Set the TEST_BRAG_DOC_PATH environment variable before each test."""
+def enable_testing_mode():
+    """Enable testing mode for all tests."""
+    # Store original value
+    original_is_testing = constants.IS_TESTING
+    original_test_dir = constants.TEST_DIR
+    
     # Create a temporary directory for this test
     temp_dir = tempfile.mkdtemp()
-    temp_brag_path = os.path.join(temp_dir, "bragdoc.md")
     
-    os.environ["TEST_BRAG_DOC_PATH"] = "/tmp/test_bragdoc.md"
-
-    # Store original value if it exists
-    old_value = os.environ.get("TEST_BRAG_DOC_PATH")
+    # Enable testing mode and set test directory
+    constants.IS_TESTING = True
+    constants.TEST_DIR = temp_dir
     
-    # Set environment variable for all tests
-    os.environ["TEST_BRAG_DOC_PATH"] = temp_brag_path
-    
-    yield temp_brag_path
+    yield temp_dir
     
     # Clean up
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir)
     
-    # Restore original value
-    if old_value is not None:
-        os.environ["TEST_BRAG_DOC_PATH"] = old_value
-    else:
-        os.environ.pop("TEST_BRAG_DOC_PATH", None)
+    # Restore original values
+    constants.IS_TESTING = original_is_testing
+    constants.TEST_DIR = original_test_dir
 
 @pytest.fixture
 def temp_bragdoc_path():
