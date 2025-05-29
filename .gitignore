@@ -53,6 +53,9 @@ htmlcov/
 .coverage
 .tox/
 
+# Test data directory
+test_data/
+
 # Ignore bragdoc in user data locations
 /Library/Application Support/bragdoc.md
 /.local/share/bragdoc.md 

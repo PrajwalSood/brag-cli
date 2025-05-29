@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from brag.constants import (
     BRAG_DOC_FILENAME, TIMESTAMP_FORMAT, DATE_FORMAT, BRAG_DOC_HEADER,
     WINDOWS_BASE_PATH, DARWIN_APP_SUPPORT_PATH, LINUX_DATA_PATH, XDG_DATA_HOME_ENV,
-    CATEGORY_FORMAT, GIT_INIT_COMMIT_MESSAGE, TEST_BRAG_DOC_PATH
+    CATEGORY_FORMAT, GIT_INIT_COMMIT_MESSAGE, IS_TESTING, TEST_DIR
 )
 
 # Determine brag doc path based on OS
@@ -25,9 +25,12 @@ def get_brag_doc_path(test_path: str = None) -> str:
     if test_path:
         return test_path
         
-    # Use environment variable test path if set
-    if TEST_BRAG_DOC_PATH:
-        return TEST_BRAG_DOC_PATH
+    # Import constants dynamically to get current values
+    from brag import constants
+    
+    # Use test directory if in testing mode
+    if constants.IS_TESTING:
+        return os.path.join(constants.TEST_DIR, BRAG_DOC_FILENAME)
         
     # Normal path resolution based on OS
     home = os.path.expanduser("~")

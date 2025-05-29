@@ -1,7 +1,10 @@
 import typer
 from brag.doc_utils import init_brag_doc, add_entry, read_history, purge_entries_between
 from brag.git_utils import sync_with_git, get_git_history
-from brag.ollama_utils import summarize_brag_doc, generate_resume_bullets
+from brag.ollama_utils import (
+    summarize_brag_doc, generate_resume_bullets,
+    generate_profile_based_resume, generate_profile_based_summary
+)
 from datetime import datetime, timedelta
 import re
 from brag.category_utils import (
@@ -9,10 +12,19 @@ from brag.category_utils import (
     set_current_category, get_current_category, unset_current_category, change_current_category,
     list_categories, select_category_by_index
 )
+from brag.profile import (
+    init_profile, get_profile, update_profile_field,
+    add_list_item, remove_list_item
+)
+from brag.constants import PROFILE_FIELDS
+from brag.prompts import PROFILE_GREETING
+import json
 
 app = typer.Typer(help="Brag CLI: Create and manage your brag document.")
 category_app = typer.Typer(help="Manage current brag category.")
+profile_app = typer.Typer(help="Manage your developer profile.")
 app.add_typer(category_app, name="category")
+app.add_typer(profile_app, name="profile")
 
 def parse_relative_time(relative: str) -> str:
     """
@@ -103,11 +115,76 @@ def select_category(index: int):
     except (ValueError, IndexError) as e:
         typer.echo(str(e))
 
+@profile_app.command("init")
+def initialize_profile():
+    """Initialize a new developer profile."""
+    created = init_profile()
+    if created:
+        typer.echo("Developer profile initialized.")
+    else:
+        typer.echo("Developer profile already exists.")
+
+@profile_app.command("show")
+def show_profile():
+    """Show your developer profile."""
+    profile = get_profile()
+    typer.echo(json.dumps(profile, indent=2))
+
+@profile_app.command("update")
+def update_profile(
+    field: str = typer.Option(..., help=f"Field to update. Available fields: {', '.join(PROFILE_FIELDS)}"),
+    value: str = typer.Option(..., help="New value for the field")
+):
+    """Update a field in your developer profile."""
+    update_profile_field(field, value)
+    typer.echo(f"Updated {field} to: {value}")
+
+@profile_app.command("add-item")
+def add_to_list(
+    field: str = typer.Option(..., help="List field to add to (skills, experience, education)"),
+    item: str = typer.Option(..., help="Item to add to the list")
+):
+    """Add an item to a list field in your profile."""
+    add_list_item(field, item)
+    typer.echo(f"Added '{item}' to {field}")
+
+@profile_app.command("remove-item")
+def remove_from_list(
+    field: str = typer.Option(..., help="List field to remove from (skills, experience, education)"),
+    index: int = typer.Option(..., help="Index of the item to remove")
+):
+    """Remove an item from a list field by index."""
+    removed = remove_list_item(field, index)
+    if removed:
+        typer.echo(f"Removed '{removed}' from {field}")
+    else:
+        typer.echo(f"No item found at index {index} in {field}")
+
+@profile_app.command("generate-resume")
+def profile_resume():
+    """Generate a comprehensive resume using your profile and brag document."""
+    resume = generate_profile_based_resume()
+    typer.echo(resume)
+
+@profile_app.command("generate-summary")
+def profile_summary():
+    """Generate a professional summary using your profile and brag document."""
+    summary = generate_profile_based_summary()
+    typer.echo(summary)
+
 @app.command()
 def add(
     message: str = typer.Argument(..., help="Message or achievement to add.")
 ):
     """Add a new entry to the brag doc. Uses the current category if set, else auto-categorises."""
+    # Display personalized greeting if profile exists
+    try:
+        profile = get_profile()
+        if profile["name"] and profile["title"]:
+            typer.echo(PROFILE_GREETING.format(name=profile["name"], title=profile["title"]))
+    except:
+        pass
+        
     assigned_category = get_current_category()
     if not assigned_category:
         history = read_history()
